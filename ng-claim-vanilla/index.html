@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <title>AF Subro Accelerator</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+</head>
+<script type="text/javascript" src='guidewire/gw-embedded-ts-debug.js'> </script>
+<script>
+
+    var baseAPIUrl = 'https://ng-claim-app.spring-cloud.pks.arbfile.org/api/demands/';
+    // var claimCenterURL = 'http://tpap10-gdwire01.arbfile.org:8080';
+    var claimCenterURL = 'http://localhost:8000';
+
+    var oReq = new XMLHttpRequest();
+    var oReqWeather = new XMLHttpRequest();
+    oReqWeather.onload = reqWeather;
+
+
+
+    // oReq.withCredentials = true;
+    oReq.onload = reqListener;
+    oReq.onerror = reqError;
+
+    var demand = null;
+    const urlParams = new URLSearchParams(window.location.search);
+    const demandIdParam = urlParams.get('demandID');
+    if (demandIdParam) {
+        console.log("got demand ID of " + demandIdParam);
+
+        oReq.open('get', baseAPIUrl + demandIdParam, true);
+        oReq.send();
+
+    }
+    else {
+        console.log("no demand ID passed in, about to communicate with CC");
+
+        GwCrossOriginExternal.init(claimCenterURL, "*");
+
+        communicate();
+    }
+
+    function communicate() {
+
+        console.log("trying to communicate with CC");
+
+        GwCrossOriginExternal.makeNonBlockingServerRequest({ 'name': "roger" }).then((result) => {
+            demand = result;
+
+            // write response in DOM
+            insertToDOM(result);
+        })
+
+    }
+    function reqListener() {
+        demand = JSON.parse(this.responseText.jsonObject);
+        insertToDOM(demand);
+
+    }
+
+    function reqWeather() {
+        document.getElementById("restCallArea").innerHTML = this.responseText;
+    }
+
+    function reqError(err) {
+        console.log('Fetch Error :-S', err);
+
+    }
+
+    function insertToDOM(text) {
+        console.log(text);
+        document.getElementById("demandArea").innerHTML = text;
+    }
+
+    function makeRestCall() {
+        oReqWeather.open('get', "https://api.weather.gov/points/39.7456,-97.0892", true);
+        oReqWeather.send();
+    }
+
+
+
+</script>
+<body>
+    <!-- Area to show the result -->
+    <h1> Initiate Demand </h1>
+    <button onclick="makeRestCall()" id="makeRestBtn"> Make REST Call </button>
+
+    <div id="restCallArea"> </div>
+
+    <div id="demandArea"> </div></body>
+
+</html>
